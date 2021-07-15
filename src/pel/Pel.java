@@ -4,5 +4,5 @@ import pel.util.Version;
 
 public class Pel {
     public static final Version
-        VERSION = new Version("Bismuth", 0, 0, 2);
+        VERSION = new Version("Pel", 0, 0, 2);
 }
