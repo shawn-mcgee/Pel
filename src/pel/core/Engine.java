@@ -1,14 +1,25 @@
 package pel.core;
 
+import com.squareup.gifencoder.GifEncoder;
+import com.squareup.gifencoder.ImageOptions;
 import pel.Pel;
 import pel.math.*;
 import pel.util.*;
 import pel.util.Event;
 
+import javax.imageio.ImageIO;
+import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import java.awt.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 
 import static pel.core.Colors.color3i;
 import static pel.core.Colors.color4i;
@@ -179,6 +190,12 @@ public final class Engine implements Runnable {
         t0,
         t1,
         t2;
+    
+    // recording
+    protected final LinkedHashSet<GIF>
+        gif  =  new LinkedHashSet<GIF>();
+    protected final LinkedHashSet<WAV>
+        wav  =  new LinkedHashSet<WAV>();
     
     private Engine() {
         // initialize the event system
@@ -370,9 +387,17 @@ public final class Engine implements Runnable {
         INSTANCE.broker.queue(event);
     }
     
+    public static void capturePNG() {
+        new PNG().write();
+    }
     
+    public static GIF recordGIF() {
+        return new GIF();
+    }
     
-    
+    public static WAV recordWAV() {
+        return new WAV();
+    }
     
     @Override
     public void run() {
@@ -695,6 +720,10 @@ public final class Engine implements Runnable {
     public void onExit() {
         if(window != null)
             window.dispose();
+        for(GIF g: gif)
+            g.write();
+        for(WAV w: wav)
+            w.write();
     }
     
     protected final Updateable.UpdateContext
@@ -722,6 +751,9 @@ public final class Engine implements Runnable {
         
         if(scene != null)
             scene.onRenderImage(image_context);
+        
+        for(GIF g: gif)
+            g.onRenderImage(image_context);
         
         if(b == null || b.contentsLost()) {
             canvas.createBufferStrategy(2);
@@ -796,6 +828,9 @@ public final class Engine implements Runnable {
         
         if(scene != null)
             scene.onRenderAudio(audio_context);
+        
+        for(WAV w: wav)
+            w.onRenderAudio(audio_context);
         
         audio.write(audio_buffer, 0, audio_buffer.length);
     }
@@ -980,7 +1015,7 @@ public final class Engine implements Runnable {
         DEBUG_FONT_NAME  = "debug_font_name",
         DEBUG_FONT_SIZE  = "debug_font_size",
         DEBUG_FOREGROUND = "debug_foreground",
-        FPS           = "fps",
+        FPS               = "fps",
         CANVAS_BACKGROUND = "canvas-background",
         CANVAS_LAYOUT     = "canvas-layout",
         WINDOW_BACKGROUND = "window-background",
@@ -994,5 +1029,224 @@ public final class Engine implements Runnable {
         _DEBUG_UPDATE       = ".debug-update",
         _DEBUG_RENDER_IMAGE = ".debug-render-image",
         _DEBUG_RENDER_AUDIO = ".debug-render-audio",
-        _DEBUG_CANVAS = ".debug-canvas";
+        _DEBUG_CANVAS       = ".debug-canvas";
+    
+    public static class PNG implements AutoCloseable {
+        protected static final String
+            FORMAT = "png/PNG_%1$06d.png";
+        protected static int
+            INDEX = 0;
+        
+        protected final Resource
+            resource;
+        
+        public PNG() {
+            this((Resource)null);
+        }
+    
+        public PNG(Class<?> from, String path) {
+            this(new Resource(from, path));
+        }
+    
+        public PNG(String   from, String path) {
+            this(new Resource(from, path));
+        }
+    
+        public PNG(String   resource) {
+            this(new Resource(resource));
+        }
+    
+        public PNG(Resource resource) {
+            if(resource != null)
+                this.resource = resource;
+            else {
+                String path = String.format(FORMAT, INDEX);
+                while(Resource.exists(path))
+                    path = String.format(FORMAT, ++ INDEX);
+                this.resource = new Resource(path);
+            }
+        }
+    
+        @Override
+        public void close() throws Exception {
+            try (OutputStream out = resource.newOutputStream()) {
+                ImageIO.write(INSTANCE.image, "PNG", out);
+            }
+        }
+        
+        public void write() {
+            try {
+                close();
+            } catch(Exception na) {
+                // do nothing
+            }
+        }
+    }
+    
+    public static class GIF implements AutoCloseable, Renderable.Image {
+        protected static final String
+            FORMAT = "gif/GIF_%1$03d.gif";
+        protected static int
+            INDEX = 0;
+        
+        protected final Resource
+            resource;
+        
+        protected OutputStream
+            gif_output;
+        protected GifEncoder
+            gif_encoder;
+        protected ImageOptions
+            gif_options;
+        
+        public GIF() {
+            this((Resource)null);
+        }
+        
+        public GIF(Class<?> from, String path) {
+            this(new Resource(from, path));
+        }
+        
+        public GIF(String   from, String path) {
+            this(new Resource(from, path));
+        }
+    
+        public GIF(String   resource) {
+            this(new Resource(resource));
+        }
+        
+        public GIF(Resource resource) {
+            if(resource != null)
+                this.resource = resource;
+            else {
+                String path = String.format(FORMAT, INDEX);
+                while(Resource.exists(path))
+                    path = String.format(FORMAT, ++ INDEX);
+                this.resource = new Resource(path);
+            }
+            start();
+        }
+        
+        protected void start() {
+            INSTANCE.gif.add(this);
+            try {
+                gif_output  = resource.newOutputStream();
+                gif_encoder = new GifEncoder(
+                    gif_output,
+                    INSTANCE.virtual_canvas_w,
+                    INSTANCE.virtual_canvas_h,
+                    0
+                );
+                gif_options = new ImageOptions();
+            } catch(Exception na) {
+                na.printStackTrace();
+            }
+        }
+    
+        @Override
+        public void close() throws Exception {
+            INSTANCE.gif.remove(this);
+            
+            gif_encoder.finishEncoding();
+            gif_output.flush();
+            gif_output.close();
+        }
+        
+        public void write() {
+            try {
+                close();
+            } catch(Exception na) {
+                // do nothing
+            }
+        }
+    
+        @Override
+        public void onRenderImage(ImageContext context) {
+            try {
+                gif_options.setDelay((int)(1000 * context.fixed_dt), TimeUnit.MILLISECONDS);
+                gif_encoder.addImage(context.image_buffer, context.w, gif_options);
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+            }
+        }
+    }
+    
+    public static class WAV implements AutoCloseable, Renderable.Audio {
+        protected static final String
+            FORMAT = "wav/WAV_%1$03d.gif";
+        protected static int
+            INDEX = 0;
+    
+        protected final Resource
+            resource;
+        
+        protected OutputStream
+            wav_output;
+        protected ByteArrayOutputStream
+            wav_buffer;
+    
+        public WAV() {
+            this((Resource)null);
+        }
+    
+        public WAV(Class<?> from, String path) {
+            this(new Resource(from, path));
+        }
+    
+        public WAV(String   from, String path) {
+            this(new Resource(from, path));
+        }
+    
+        public WAV(String   resource) {
+            this(new Resource(resource));
+        }
+    
+        public WAV(Resource resource) {
+            if(resource != null)
+                this.resource = resource;
+            else {
+                String path = String.format(FORMAT, INDEX);
+                while(Resource.exists(path))
+                    path = String.format(FORMAT, ++ INDEX);
+                this.resource = new Resource(path);
+            }
+        }
+        
+        protected void start() {
+            INSTANCE.wav.add(this);
+    
+            wav_output = resource.newOutputStream();
+            wav_buffer = new ByteArrayOutputStream();
+        }
+    
+        @Override
+        public void close() throws Exception {
+            INSTANCE.wav.remove(this);
+    
+            byte[] b = wav_buffer.toByteArray();
+            ByteArrayInputStream bais = new ByteArrayInputStream(b);
+            AudioInputStream ais = new AudioInputStream(bais, Engine.AUDIO_FORMAT, b.length);
+    
+            AudioSystem.write(ais, AudioFileFormat.Type.WAVE, wav_output);
+            wav_buffer.close();
+            wav_output.close();
+        }
+    
+        public void write() {
+            try {
+                close();
+            } catch(Exception na) {
+                // do nothing
+            }
+        }
+    
+        @Override
+        public void onRenderAudio(Renderable.AudioContext context) {
+            try {
+                wav_buffer.write(context.audio_buffer);
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+            }
+        }
+    }
 }

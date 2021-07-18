@@ -26,6 +26,11 @@ public class LRJSandbox {
     
         // set the current scene
         Engine.setCurrentScene(new Scene() {
+            
+            @Override
+            public void onAttach() {
+            }
+            
             @Override
             public void onRenderImage(Renderable.ImageContext context) {
                 for(int i = 0; i < context.image_buffer.length; i ++)
