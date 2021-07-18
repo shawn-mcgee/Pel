@@ -1,6 +1,7 @@
 package pel;
 
 import pel.core.Engine;
+import pel.core.Input;
 import pel.core.Renderable;
 import pel.core.Scene;
 import pel.util.Debug;
@@ -30,6 +31,10 @@ public class LRJSandbox {
                 for(int i = 0; i < context.image_buffer.length; i ++)
                     context.image_buffer[i] += i;
             }
+        });
+        
+        Engine.attach(Input.KEY_EVENT, (event) -> {
+            Debug.info(event.key);
         });
     }
 }

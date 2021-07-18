@@ -370,6 +370,10 @@ public final class Engine implements Runnable {
         INSTANCE.broker.queue(event);
     }
     
+    
+    
+    
+    
     @Override
     public void run() {
         try {
@@ -477,6 +481,13 @@ public final class Engine implements Runnable {
             }
         });
     
+        canvas.setFocusable(true);
+        canvas.setFocusTraversalKeysEnabled(false);
+    
+        canvas.addKeyListener        (Input.INSTANCE);
+        canvas.addMouseListener      (Input.INSTANCE);
+        canvas.addMouseWheelListener (Input.INSTANCE);
+        canvas.addMouseMotionListener(Input.INSTANCE);
         canvas.addComponentListener(new java.awt.event.ComponentAdapter() {
             @Override
             public void componentResized(java.awt.event.ComponentEvent ce) {
@@ -689,6 +700,7 @@ public final class Engine implements Runnable {
     protected final Updateable.UpdateContext
         update_context = new Updateable.UpdateContext();
     public void update(float t, float dt, float fixed_dt) {
+        Input .poll();
         broker.poll();
     }
     
@@ -832,6 +844,30 @@ public final class Engine implements Runnable {
                 bounds.y + bounds.height - insets.top  - insets.bottom
             );
         }
+    }
+    
+    public void onKeyUp(int key) {
+        if(scene != null) scene.onKeyUp(key);
+    }
+    
+    public void onKeyDown(int key) {
+        if(scene != null) scene.onKeyDown(key);
+    }
+    
+    public void onMouseUp(int mouse) {
+        if(scene != null) scene.onMouseUp(mouse);
+    }
+    
+    public void onMouseDown(int mouse) {
+        if(scene != null) scene.onMouseDown(mouse);
+    }
+    
+    public void onMouseMoved(Vector2 mouse) {
+        if(scene != null) scene.onMouseMoved(mouse);
+    }
+    
+    public void onMouseWheel(float   wheel) {
+        if(scene != null) scene.onMouseWheel(wheel);
     }
     
     public void onCanvasEvent(CanvasEvent event) {
