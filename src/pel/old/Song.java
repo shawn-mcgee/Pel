@@ -1,6 +1,6 @@
 package pel.old;
 
-import pel.old.scene.Renderable;
+import pel.core.Renderable;
 
 public class Song implements Renderable.Audio {
     public static float
@@ -23,19 +23,19 @@ public class Song implements Renderable.Audio {
     
     @Override
     public void onRenderAudio(Renderable.AudioContext context) {
-        float x = PI * frequency / context.sample_rate;
-        for(int i = 0; i < context.buffer.length; i ++) {
+        float q = PI * frequency / context.audio_sample_rate;
+        for(int i = 0; i < context.audio_buffer.length; i ++) {
             if(duration <= 0) {
                 note = notes[z = (z + 1) % notes.length];
                 frequency = note.frequency;
                 amplitude = note.amplitude;
-                duration = (int)(note.duration * context.sample_rate);
+                duration = (int)(note.duration * context.audio_sample_rate);
     
-                x = PI * frequency / context.sample_rate;
+                q = PI * frequency / context.audio_sample_rate;
             }
-            context.buffer[i] += (byte)(amplitude * Math.sin((i + j) * x));
+            context.audio_buffer[i] += (byte)(amplitude * Math.sin((i + j) * q));
             duration --;
         }
-        j += context.buffer.length;
+        j += context.audio_buffer.length;
     }
 }

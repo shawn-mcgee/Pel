@@ -72,6 +72,8 @@ public final class Engine implements Runnable {
         debug_foreground = new Vector4(color3i(Color.WHITE), 127);
     protected int
         fps = 60;
+    protected int
+        gif_frame_skip = 1;
     protected Vector3
         canvas_background = color3i(Color.WHITE);
     protected Layout
@@ -421,6 +423,7 @@ public final class Engine implements Runnable {
         debug_foreground = getPropertyAs(DEBUG_FOREGROUND, Vector4::fromString, debug_foreground);
         
         fps   = getPropertyAs(FPS  , INTEGER, fps  );
+        gif_frame_skip = getPropertyAs(GIF_FRAME_SKIP, INTEGER, gif_frame_skip);
         canvas_background = getPropertyAs(CANVAS_BACKGROUND, Vector3::fromString, canvas_background);
         canvas_layout = getPropertyAs(CANVAS_LAYOUT, Layout::fromString, canvas_layout);
         window_background = getPropertyAs(WINDOW_BACKGROUND, Vector3::fromString, window_background);
@@ -729,8 +732,15 @@ public final class Engine implements Runnable {
     protected final Updateable.UpdateContext
         update_context = new Updateable.UpdateContext();
     public void update(float t, float dt, float fixed_dt) {
+        update_context.t  = t ;
+        update_context.dt = dt;
+        update_context.fixed_dt = fixed_dt;
+
         Input .poll();
         broker.poll();
+
+        if(scene != null)
+            scene.onUpdate(update_context);
     }
     
     protected java.awt.image.BufferStrategy
@@ -747,6 +757,7 @@ public final class Engine implements Runnable {
         image_context.w = virtual_canvas_w;
         image_context.h = virtual_canvas_h;
         
+        image_context.image        = image       ;
         image_context.image_buffer = image_buffer;
         
         if(scene != null)
@@ -1016,6 +1027,7 @@ public final class Engine implements Runnable {
         DEBUG_FONT_SIZE  = "debug_font_size",
         DEBUG_FOREGROUND = "debug_foreground",
         FPS               = "fps",
+        GIF_FRAME_SKIP    = "gif-frame-skip",
         CANVAS_BACKGROUND = "canvas-background",
         CANVAS_LAYOUT     = "canvas-layout",
         WINDOW_BACKGROUND = "window-background",
@@ -1159,15 +1171,22 @@ public final class Engine implements Runnable {
                 // do nothing
             }
         }
+
+        protected int
+            gif_frame_skip;
     
         @Override
         public void onRenderImage(ImageContext context) {
-            try {
-                gif_options.setDelay((int)(1000 * context.fixed_dt), TimeUnit.MILLISECONDS);
-                gif_encoder.addImage(context.image_buffer, context.w, gif_options);
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
-            }
+            if(gif_frame_skip == INSTANCE.gif_frame_skip) {
+                try {
+                    gif_options.setDelay((int) (1000 * context.fixed_dt * (gif_frame_skip + 1)), TimeUnit.MILLISECONDS);
+                    gif_encoder.addImage(context.image_buffer, context.w, gif_options);
+                } catch (IOException ioe) {
+                    ioe.printStackTrace();
+                }
+                gif_frame_skip = 0;
+            } else
+                gif_frame_skip ++ ;
         }
     }
     

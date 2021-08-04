@@ -1,5 +1,8 @@
 package pel.core;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
+
 public interface Renderable {
     
     public static interface Image extends Renderable {
@@ -52,6 +55,26 @@ public interface Renderable {
     
     public static interface Audio extends Renderable {
         public void onRenderAudio(AudioContext context);
+        
+        public static byte clip(short x) {
+            return x >= Byte.MIN_VALUE ? x <= Byte.MAX_VALUE ? (byte)x : Byte.MAX_VALUE : Byte.MIN_VALUE;
+        }
+        
+        public static byte clip(int   x) {
+            return x >= Byte.MIN_VALUE ? x <= Byte.MAX_VALUE ? (byte)x : Byte.MAX_VALUE : Byte.MIN_VALUE;
+        }
+        
+        public static byte clip(long  x) {
+            return x >= Byte.MIN_VALUE ? x <= Byte.MAX_VALUE ? (byte)x : Byte.MAX_VALUE : Byte.MIN_VALUE;
+        }
+        
+        public static byte clip(float  x) {
+            return x >= Byte.MIN_VALUE ? x <= Byte.MAX_VALUE ? (byte)x : Byte.MAX_VALUE : Byte.MIN_VALUE;
+        }
+    
+        public static byte clip(double x) {
+            return x >= Byte.MIN_VALUE ? x <= Byte.MAX_VALUE ? (byte)x : Byte.MAX_VALUE : Byte.MIN_VALUE;
+        }
     }
     
     public static class RenderContext {
@@ -62,6 +85,8 @@ public interface Renderable {
     }
     
     public static class ImageContext extends RenderContext {
+        public BufferedImage
+            image;
         public int[]
             image_buffer;
         public int
