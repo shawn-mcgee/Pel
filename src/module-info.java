@@ -1,8 +1,9 @@
-module Pel {
+module LRJ {
     requires java.desktop;
     requires com.squareup.gifencoder;
     
-    exports pel.util;
-    exports pel.core;
-    exports pel.math;
+    exports lrj.util;
+    exports lrj.core;
+    exports lrj.math;
+    exports lrj.game;
 }

@@ -1,32 +1,29 @@
 package lrj;
 
-import pel.Pel;
-import pel.core.*;
-import pel.math.Vector2;
-import pel.math.Vector3;
-import pel.old.Note;
-import pel.old.Song;
-import pel.util.Debug;
+import lrj.core.Engine;
+import lrj.core.Input;
+import lrj.game.Game;
+import lrj.util.Debug;
+import lrj.util.Version;
 
-import java.awt.*;
-import java.util.Arrays;
-import java.util.Random;
-
-import static java.awt.event.KeyEvent.*;
+import static java.awt.event.KeyEvent.VK_SPACE;
 
 public class LRJ {
+    public static final Version
+        VERSION = new Version("LRJ", 2021, 0, 3);
+
     static Engine.GIF
         record_gif;
 
     public static void main(String[] args) {
-        Debug.info(new Object() { }, Pel.VERSION);
+        Debug.info(new Object() { }, lrj.LRJ.VERSION);
 
         // configure engine for lowrezjam
         Engine.configure(
-            Engine.DEBUG        , false             ,
-            Engine.CANVAS_LAYOUT, "w0: 64u, h0: 64u",
-            Engine.WINDOW_LAYOUT, "w0:640u, h0:480u",
-            Engine.WINDOW_DEVICE, 1
+                Engine.DEBUG        , false             ,
+                Engine.CANVAS_LAYOUT, "w0: 64u, h0: 64u",
+                Engine.WINDOW_LAYOUT, "w0:640u, h0:480u",
+                Engine.WINDOW_DEVICE, 1
         );
 
         Engine.attach(Input.KEY_EVENT, (event) -> {
@@ -40,6 +37,5 @@ public class LRJ {
         Engine.setCurrentScene(new Game());
 
         Engine.init();
-
     }
 }
