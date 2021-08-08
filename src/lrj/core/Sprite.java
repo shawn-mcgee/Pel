@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Objects;
 
 public class Sprite implements Renderable.Image {
-    protected Sprite.Atlas
+    public final Sprite.Atlas
         atlas;
 
     public float
@@ -54,9 +54,9 @@ public class Sprite implements Renderable.Image {
             NAME_INDEX = new HashMap<String, Atlas>(),
             PATH_INDEX = new HashMap<String, Atlas>();
 
-        protected final Resource
+        public final Resource
             resource;
-        protected final String
+        public final String
             path_string,
             name_string;
 
@@ -65,13 +65,13 @@ public class Sprite implements Renderable.Image {
 
         protected final int[]
             atlas_buffer;
-        protected final int
+        public final int
             atlas_w,
             atlas_h;
 
         protected final int[][]
             frame_buffer;
-        protected final int
+        public final int
             frame_w,
             frame_h;
 

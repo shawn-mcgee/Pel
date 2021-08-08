@@ -2,7 +2,8 @@ package lrj;
 
 import lrj.core.Engine;
 import lrj.core.Input;
-import lrj.game.Game;
+import lrj.game.menu.GameOverMenu;
+import lrj.game.menu.MainMenu;
 import lrj.util.Debug;
 import lrj.util.Version;
 
@@ -11,7 +12,7 @@ import static java.awt.event.KeyEvent.VK_SPACE;
 
 public class LRJ {
     public static final Version
-        VERSION = new Version("LRJ 2021", 8, 4, 1);
+        VERSION = new Version("LRJ 2021", 8, 8, 0);
 
     static Engine.GIF
         record_gif;
@@ -21,9 +22,9 @@ public class LRJ {
 
         // configure engine for lowrezjam
         Engine.configure(
-                Engine.DEBUG        , true              ,
+                Engine.DEBUG        , false              ,
                 Engine.CANVAS_LAYOUT, "w0: 64u, h0: 64u",
-                Engine.WINDOW_LAYOUT, "w0:640u, h0:480u",
+                Engine.WINDOW_LAYOUT, "x0:.5, y0: .5, x1:.5, y1:.5, w0:640u, h0:480u",
                 Engine.WINDOW_DEVICE, 1
         );
 
@@ -37,7 +38,7 @@ public class LRJ {
             if(event.isDown() && event.isKey(VK_PERIOD))
                 Engine.capturePNG();
         });
-        Engine.setCurrentScene(new Game());
+        Engine.setCurrentScene(new MainMenu());
 
         Engine.init();
     }

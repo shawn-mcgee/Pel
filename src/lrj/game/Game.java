@@ -1,27 +1,22 @@
 package lrj.game;
 
 import lrj.core.*;
+import lrj.game.menu.MainMenu;
 import lrj.math.Vector3;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 
+import static lrj.game.menu.Menu.*;
+import static lrj.game.sprites.Sprites.*;
 import static java.awt.event.KeyEvent.*;
 import static lrj.math.Vector.*;
 
 public class Game extends Scene {
-    protected static final Sprite.Atlas
-        SHIP_SPRITE_ATLAS = Sprite.Atlas.load("lrj.game.Game:lrj_ship.png", "lrj_ship", 16, 16),
-        HEALTH_ICON_ATLAS = Sprite.Atlas.load("lrj.game.Game:lrj_health.png", "lrj_health_icon", 8, 8),
-        PHASER_ICON_ATLAS = Sprite.Atlas.load("lrj.game.Game:lrj_phaser.png", "lrj_phaser_icon", 8, 8),
-        SENSOR_ICON_ATLAS = Sprite.Atlas.load("lrj.game.Game:lrj_sensor.png", "lrj_sensor_icon", 8, 8),
-        ROCK_16_ATLAS = Sprite.Atlas.load("lrj.game.Game:lrj_rock16.png", "lrj_rock16", 16, 16),
-        ROCK_08_ATLAS = Sprite.Atlas.load("lrj.game.Game:lrj_rock08.png", "lrj_rock08",  8,  8),
-        ROCK_04_ATLAS = Sprite.Atlas.load("lrj.game.Game:lrj_rock04.png", "lrj_rock04",  4,  4);
-
     public static final int
         CANVAS_W = 64,
         CANVAS_H = 64,
@@ -34,7 +29,7 @@ public class Game extends Scene {
     public static final float
         MIN_WARP_PARALLAX =  8f,
         MAX_WARP_PARALLAX = 64f,
-        DELTA_WARP        = .8f,
+        DELTA_WARP        = .75f,
         MIN_WARP_STRAFE   = 31f,
         MAX_WARP_STRAFE   = 62f,
         MIN_WARP_SCORE    =  1f,
@@ -53,14 +48,20 @@ public class Game extends Scene {
         ship_sprite,
         health_icon_sprite,
         phaser_icon_sprite,
-        sensor_icon_sprite;
+        sensor_icon_sprite,
+        rock_16_sprite,
+        rock_08_sprite,
+        rock_04_sprite,
+        number,
+        play_button,
+        menu_button;
 
     protected float
-        warp = .25f;
+        warp = 0f;
     protected float
         warp_parallax = computeWarpParallax(warp),
-        delta_strafe = computeDeltaStrafe(warp),
-        delta_score  = computeDeltaScore(warp);
+        delta_strafe  = computeDeltaStrafe(warp),
+        delta_score   = computeDeltaScore(warp);
 
     protected float
         player_x,
@@ -72,6 +73,14 @@ public class Game extends Scene {
         player_health,
         player_phaser,
         player_sensor;
+
+    protected Sprite[]
+        sprites;
+
+    protected boolean
+        pause;
+
+
 
     public Game() {
         parallax_layer0_image = new BufferedImage(CANVAS_W, CANVAS_H, BufferedImage.TYPE_INT_RGB);
@@ -89,16 +98,22 @@ public class Game extends Scene {
         parallax_layer2_stars = new Vector3.Mutable[CANVAS_W];
 
         Random random = new Random();
-        for(int i = 0; i < 64; i ++) {
+        for(int i = 0; i < CANVAS_W; i ++) {
             parallax_layer0_stars[i] = new Vector3.Mutable(i, CANVAS_H * (2f * random.nextFloat() - 1f), random.nextFloat() + 1f);
             parallax_layer1_stars[i] = new Vector3.Mutable(i, CANVAS_H * (2f * random.nextFloat() - 1f), random.nextFloat() + 2f);
             parallax_layer2_stars[i] = new Vector3.Mutable(i, CANVAS_H * (2f * random.nextFloat() - 1f), random.nextFloat() + 3f);
         }
 
-        ship_sprite = new Sprite(SHIP_SPRITE_ATLAS);
-        health_icon_sprite = new Sprite(HEALTH_ICON_ATLAS);
-        phaser_icon_sprite = new Sprite(PHASER_ICON_ATLAS);
-        sensor_icon_sprite = new Sprite(SENSOR_ICON_ATLAS);
+        ship_sprite = new Sprite(LRJ_SHIP);
+        health_icon_sprite = new Sprite(LRJ_HEALTH_ICON);
+        phaser_icon_sprite = new Sprite(LRJ_PHASER_ICON);
+        sensor_icon_sprite = new Sprite(LRJ_SENSOR_ICON);
+        rock_16_sprite = new Sprite(LRJ_ROCK_16);
+        rock_08_sprite = new Sprite(LRJ_ROCK_08);
+        rock_04_sprite = new Sprite(LRJ_ROCK_04);
+        number = new Sprite(LRJ_NUMBER);
+        play_button = new Sprite(LRJ_PLAY_BUTTON);
+        menu_button = new Sprite(LRJ_MENU_BUTTON);
     }
 
     @Override
@@ -108,10 +123,18 @@ public class Game extends Scene {
 
     public void onReset() {
         player_health = 1;
+        player_phaser = 1;
+        player_sensor = 1;
         player_w = 10;
         player_h = 16;
         player_x = CANVAS_W / 2f;
         player_y = computePlayerPosition(warp);
+        sprites = new Sprite[36];
+
+        play_button.x = (CANVAS_W - play_button.w) / 2;
+        menu_button.x = (CANVAS_W - play_button.w) / 2;
+        play_button.y = CANVAS_H / 2 - play_button.h - 2;
+        menu_button.y = CANVAS_H / 2;
     }
 
     public float computeWarpParallax(float warp) {
@@ -137,34 +160,43 @@ public class Game extends Scene {
 
     @Override
     public void onUpdate(UpdateContext context) {
-        if(Input.isKeyDown(VK_UP))
-            warp = Math.min(warp + DELTA_WARP * context.fixed_dt, 1f);
-        if(Input.isKeyDown(VK_DOWN))
-            warp = Math.max(warp - DELTA_WARP * context.fixed_dt, 0f);
+        if(!pause) {
+            if (Input.isKeyDown(VK_UP) || Input.isKeyDown(VK_W))
+                warp = Math.min(warp + DELTA_WARP * context.fixed_dt, 1f);
+            if (Input.isKeyDown(VK_DOWN) || Input.isKeyDown(VK_S))
+                warp = Math.max(warp - DELTA_WARP * context.fixed_dt, 0f);
 
-        warp_parallax = computeWarpParallax(warp);
-        delta_strafe = computeDeltaStrafe(warp);
-        delta_score = computeDeltaScore(warp);
-        warp_trail_fade = computeWarpTrailFade(warp);
+            warp_parallax = computeWarpParallax(warp);
+            delta_strafe = computeDeltaStrafe(warp);
+            delta_score = computeDeltaScore(warp);
+            warp_trail_fade = computeWarpTrailFade(warp);
 
-        if(Input.isKeyDown(VK_LEFT) ^ Input.isKeyDown(VK_RIGHT)) {
-            if (Input.isKeyDown(VK_LEFT)) {
-                player_x = Math.max(player_x - delta_strafe * context.fixed_dt, MIN_X + player_w / 2);
-                ship_sprite.frame = 1;
-            }
-            if (Input.isKeyDown(VK_RIGHT)) {
-                player_x = Math.min(player_x + delta_strafe * context.fixed_dt, MAX_X - player_w / 2);
-                ship_sprite.frame = 2;
-            }
-        } else
-            ship_sprite.frame = 0;
+            boolean
+                l = Input.isKeyDown(VK_LEFT) || Input.isKeyDown(VK_A),
+                r = Input.isKeyDown(VK_RIGHT) || Input.isKeyDown(VK_D);
 
-        player_y = computePlayerPosition(warp);
-        ship_sprite.x = player_x - ship_sprite.w / 2;
-        ship_sprite.y = player_y - ship_sprite.h / 2;
+            if (l ^ r) {
+                if (l) {
+                    player_x = Math.max(player_x - delta_strafe * context.fixed_dt, MIN_X + player_w / 2);
+                    ship_sprite.frame = 1;
+                }
+                if (r) {
+                    player_x = Math.min(player_x + delta_strafe * context.fixed_dt, MAX_X - player_w / 2);
+                    ship_sprite.frame = 2;
+                }
+            } else
+                ship_sprite.frame = 0;
 
-        player_score += delta_score * context.fixed_dt;
+            player_y = computePlayerPosition(warp);
+            ship_sprite.x = player_x - ship_sprite.w / 2;
+            ship_sprite.y = player_y - ship_sprite.h / 2;
+
+            player_score += delta_score * context.fixed_dt;
+        }
     }
+
+    ArrayList<Sprite>
+        _sprites = spawnSprites(16);
 
     @Override
     public void onRenderImage(ImageContext context) {
@@ -172,22 +204,58 @@ public class Game extends Scene {
         renderParallaxLayers(context);
         renderWarpTrail(context);
 
+//        for(Sprite sprite: _sprites)
+//            sprite.onRenderImage(context);
+
         ship_sprite.onRenderImage(context);
 
         renderHUD(context);
 
+        if(pause) {
+            for(int i = 0; i < CANVAS_W * HUD_H; i ++)
+                context.image_buffer[i] = 0x080808;
 
+            for(int i = 0; i < 8; i ++) {
+                number.frame = (int)(player_score / Math.pow(10, i)) % 10;
+                number.x = context.w - number.w - (i * number.w);
+                number.y = 1;
 
-//        for(int i = 0; i < 8; i ++) {
-//            int order = (int)Math.pow(10, i);
-//            int digit = (int)(score / order) % 10;
-//
-//            numbers_sprite.frame = digit;
-//            numbers_sprite.x = context.w - numbers_sprite.w - (i * numbers_sprite.w);
-//            numbers_sprite.y = 1;
-//
-//            numbers_sprite.onRenderImage(context);
-//        }
+                number.onRenderImage(context);
+            }
+
+            play_button.frame = 0;
+            if (isButtonHover(play_button)) play_button.frame = ON_HOVER;
+            if (isButtonPress(play_button)) play_button.frame = ON_PRESS;
+
+            menu_button.frame = 0;
+            if (isButtonHover(menu_button)) menu_button.frame = ON_HOVER;
+            if (isButtonPress(menu_button)) menu_button.frame = ON_PRESS;
+
+            play_button.onRenderImage(context);
+            menu_button.onRenderImage(context);
+        }
+    }
+
+    @Override
+    public void onKeyDown(int key) {
+        if(key == VK_ESCAPE)
+            pause = !pause;
+    }
+
+    @Override
+    public void onMouseUp(int mouse) {
+        if (mouse == 1) {
+            if (isButtonHover(play_button)) onPlay();
+            if (isButtonHover(menu_button)) onMenu();
+        }
+    }
+
+    public void onPlay() {
+        pause = false;
+    }
+
+    public void onMenu() {
+        Engine.setCurrentScene(new MainMenu());
     }
 
     protected BufferedImage
@@ -250,29 +318,31 @@ public class Game extends Scene {
         Vector3           fade,
         float             parallax
     ) {
-        // fade
-        for(int i = 0; i < image_buffer.length; i ++) {
-            int rgb = image_buffer[i];
-            rgb = Image.r(rgb, Math.max(0, Image.r(rgb) - (int)fade.x()));
-            rgb = Image.g(rgb, Math.max(0, Image.g(rgb) - (int)fade.y()));
-            rgb = Image.b(rgb, Math.max(0, Image.b(rgb) - (int)fade.z()));
-            image_buffer[i] = rgb;
-        }
+        if(!pause) {
+            // fade
+            for (int i = 0; i < image_buffer.length; i++) {
+                int rgb = image_buffer[i];
+                rgb = Image.r(rgb, Math.max(0, Image.r(rgb) - (int) fade.x()));
+                rgb = Image.g(rgb, Math.max(0, Image.g(rgb) - (int) fade.y()));
+                rgb = Image.b(rgb, Math.max(0, Image.b(rgb) - (int) fade.z()));
+                image_buffer[i] = rgb;
+            }
 
-        // draw
-        Graphics2D g = image.createGraphics();
-        g.setColor(color);
-        for(int i = 0; i < stars.length; i ++) {
-            g.drawLine(
-                (int)stars[i].x(),
-                (int)stars[i].y(),
-                (int)stars[i].x(),
-                (int)stars[i].y(stars[i].y() + stars[i].z() * parallax * context.fixed_dt).y()
-            );
-            if(stars[i].y() > CANVAS_H)
-                stars[i].y(stars[i].y() % CANVAS_H - CANVAS_H);
+            // draw
+            Graphics2D g = image.createGraphics();
+            g.setColor(color);
+            for (int i = 0; i < stars.length; i++) {
+                g.drawLine(
+                    (int) stars[i].x(),
+                    (int) stars[i].y(),
+                    (int) stars[i].x(),
+                    (int) stars[i].y(stars[i].y() + stars[i].z() * parallax * context.fixed_dt).y()
+                );
+                if (stars[i].y() > CANVAS_H)
+                    stars[i].y(stars[i].y() % CANVAS_H - CANVAS_H);
+            }
+            g.dispose();
         }
-        g.dispose();
 
         // mix
         for(int i = 0; i < image_buffer.length; i ++)
@@ -306,36 +376,43 @@ public class Game extends Scene {
         Color color,
         Vector3 fade
     ) {
-        // translate
-        for(int i = image_buffer.length - 1; i >= 0; i --) {
-            if(i - CANVAS_W >= 0)
-                image_buffer[i] = image_buffer[i - CANVAS_W];
-            else
-                image_buffer[i] = 0;
-        }
-
-        // draw
-        if(Input.isKeyDown(VK_LEFT) ^ Input.isKeyDown(VK_RIGHT)) {
-            if(Input.isKeyDown(VK_LEFT)) {
-                image_buffer[(int)(player_y + 7) * CANVAS_W + (int)(player_x - 5)] = color.getRGB();
-                image_buffer[(int)(player_y + 7) * CANVAS_H + (int)(player_x + 2)] = color.getRGB();
+        if(!pause) {
+            // translate
+            for (int i = image_buffer.length - 1; i >= 0; i--) {
+                if (i - CANVAS_W >= 0)
+                    image_buffer[i] = image_buffer[i - CANVAS_W];
+                else
+                    image_buffer[i] = 0;
             }
-            if(Input.isKeyDown(VK_RIGHT)) {
-                image_buffer[(int)(player_y + 7) * CANVAS_W + (int)(player_x - 3)] = color.getRGB();
-                image_buffer[(int)(player_y + 7) * CANVAS_H + (int)(player_x + 4)] = color.getRGB();
-            }
-        } else {
-            image_buffer[(int)(player_y + 7) * CANVAS_W + (int)(player_x - 5)] = color.getRGB();
-            image_buffer[(int)(player_y + 7) * CANVAS_H + (int)(player_x + 4)] = color.getRGB();
-        }
 
-        // fade
-        for(int i = 0; i < image_buffer.length; i ++) {
-            int rgb = image_buffer[i];
-            rgb = Image.r(rgb, Math.max(0, Image.r(rgb) - (int)fade.x()));
-            rgb = Image.g(rgb, Math.max(0, Image.g(rgb) - (int)fade.y()));
-            rgb = Image.b(rgb, Math.max(0, Image.b(rgb) - (int)fade.z()));
-            image_buffer[i] = rgb;
+            // draw
+            boolean
+                l = Input.isKeyDown(VK_LEFT) || Input.isKeyDown(VK_A),
+                r = Input.isKeyDown(VK_RIGHT) || Input.isKeyDown(VK_D);
+
+            switch ((int) ship_sprite.frame) {
+                case 0:
+                    image_buffer[(int) (player_y + 7) * CANVAS_W + (int) (player_x - 5)] = color.getRGB();
+                    image_buffer[(int) (player_y + 7) * CANVAS_H + (int) (player_x + 4)] = color.getRGB();
+                    break;
+                case 1:
+                    image_buffer[(int) (player_y + 7) * CANVAS_W + (int) (player_x - 5)] = color.getRGB();
+                    image_buffer[(int) (player_y + 7) * CANVAS_H + (int) (player_x + 2)] = color.getRGB();
+                    break;
+                case 2:
+                    image_buffer[(int) (player_y + 7) * CANVAS_W + (int) (player_x - 3)] = color.getRGB();
+                    image_buffer[(int) (player_y + 7) * CANVAS_H + (int) (player_x + 4)] = color.getRGB();
+                    break;
+            }
+
+            // fade
+            for (int i = 0; i < image_buffer.length; i++) {
+                int rgb = image_buffer[i];
+                rgb = Image.r(rgb, Math.max(0, Image.r(rgb) - (int) fade.x()));
+                rgb = Image.g(rgb, Math.max(0, Image.g(rgb) - (int) fade.y()));
+                rgb = Image.b(rgb, Math.max(0, Image.b(rgb) - (int) fade.z()));
+                image_buffer[i] = rgb;
+            }
         }
 
         // mix
@@ -343,10 +420,6 @@ public class Game extends Scene {
             if((image_buffer[i] & 0xffffff) != 0)
                 context.image_buffer[i] = image_buffer[i];
     }
-
-
-
-
 
     public void renderHUD(Renderable.ImageContext context) {
         for(int i = 0; i < context.w * 10; i ++)
@@ -369,5 +442,111 @@ public class Game extends Scene {
             sensor_icon_sprite.y = CANVAS_H - health_icon_sprite.h - 1;
             sensor_icon_sprite.onRenderImage(context);
         }
+    }
+
+
+    protected float
+        sprite_spawn_chance = 1f,
+        rock_spawn_chance,
+        power_spawn_chance;
+
+    protected int
+        health_spawn_weight,
+        phaser_spawn_weight,
+        sensor_spawn_weight;
+
+    protected static final Random
+        random = new Random();
+    public ArrayList<Sprite> spawnSprites(int y) {
+        ArrayList<Sprite> sprites = new ArrayList<Sprite>();
+        int
+            i = 0,
+            _x = 0,
+            _y = y,
+            _h = 0;
+        while(_x < CANVAS_W) {
+
+            int w = 0;
+            if(CANVAS_W - _x < 16) w = 1;
+            if(CANVAS_W - _x <  8) w = 2;
+
+            Sprite sprite = null;
+            switch(random.nextInt(3 - w) + w) {
+                case 0: sprite = new Sprite(LRJ_ROCK_16); break;
+                case 1: sprite = new Sprite(LRJ_ROCK_08); break;
+                case 2: sprite = new Sprite(LRJ_ROCK_04); break;
+            }
+
+            if(sprite == null)
+                return sprites;
+
+            sprite.x = _x;
+            if(random.nextBoolean())
+                sprite.y = (_y -= sprite.h) + sprite.h / 2;
+            else
+                sprite.y = (_y += sprite.h) - sprite.h / 2;
+            _x += sprite.w;
+
+            sprites.add(sprite);
+        }
+
+        return sprites;
+
+//        boolean
+//                spawn_sprite = random.nextFloat() < sprite_spawn_chance,
+//                spawn_rock   = random.nextFloat() < rock_spawn_chance,
+//                spawn_power  = random.nextFloat() < power_spawn_chance;
+//
+//
+//
+//        boolean
+//                can_spawn_phaser = player_phaser < MAX_PHASER,
+//                can_spawn_sensor = player_sensor < MAX_SENSOR,
+//                can_spawn_health = player_health < MAX_HEALTH,
+//                can_spawn_power  = can_spawn_health || can_spawn_phaser || can_spawn_sensor;
+//
+//
+//
+//
+//        int
+//                power_spawn_weight =
+//                (can_spawn_health ? health_spawn_weight : 0) +
+//                        (can_spawn_phaser ? phaser_spawn_weight : 0) +
+//                        (can_spawn_sensor ? sensor_spawn_weight : 0);
+//
+//        int[] power_spawn_table_range;
+//        String[] power_spawn_table_id;
+
+
+        //smallest possible y gap that is still possible
+        // 0 with phaser
+        // without phaser?
+        // ship_h? ship_h + 1? ship_h + 2?
+        // maximum gap possible 2 * ship_h
+
+        //spawning power-ups?
+        // inline, yes easiest
+        // directly in front of rocks? yes hardest to execute, but no tradeoff
+        // directly behind rocks? yes  hardest? (requires shooting a rock... but once that happens should be easy to acquire) easy but requires tradeoff
+
+
+
+
+        // even rows from the left
+        // odd rows from the right
+
+
+        // up to one of each powerup per row?
+        // no, up to 2 power-ups per row
+
+
+        // maximum sprites size
+        // up to 2 rows at once
+
+        // 16+2 * 2 = 36
+    }
+
+    public static void populateSpawnTable(int[] range, String[] id, Object... args) {
+
     }
 }
