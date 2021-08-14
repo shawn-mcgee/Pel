@@ -12,6 +12,7 @@ public class Sprites {
         LRJ_ROCK_08 = Sprite.Atlas.load("lrj.game.sprites.Sprites:lrj_rock_08.png", "lrj_rock_08",  8,  8),
         LRJ_ROCK_04 = Sprite.Atlas.load("lrj.game.sprites.Sprites:lrj_rock_04.png", "lrj_rock_04",  4,  4);
     public static final Sprite.Atlas
+        LRJ_LOGO        = Sprite.Atlas.load("lrj.game.sprites.Sprites:lrj_logo.png", "lrj_logo", 64, 32),
         LRJ_PLAY_BUTTON = Sprite.Atlas.load("lrj.game.sprites.Sprites:lrj_play_button.png", "lrj_play_button", 40, 12),
         LRJ_QUIT_BUTTON = Sprite.Atlas.load("lrj.game.sprites.Sprites:lrj_quit_button.png", "lrj_quit_button", 40, 12),
         LRJ_MENU_BUTTON = Sprite.Atlas.load("lrj.game.sprites.Sprites:lrj_menu_button.png", "lrj_menu_button", 40, 12),

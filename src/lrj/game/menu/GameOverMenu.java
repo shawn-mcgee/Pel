@@ -2,6 +2,7 @@ package lrj.game.menu;
 
 import lrj.core.Engine;
 import lrj.core.Input;
+import lrj.core.Scene;
 import lrj.core.Sprite;
 import lrj.math.Vector2;
 import lrj.math.Vector3;
@@ -14,9 +15,10 @@ import java.util.Random;
 
 import static java.awt.event.KeyEvent.VK_ESCAPE;
 import static lrj.game.Game.*;
+import static lrj.game.menu.Menu.*;
 import static lrj.game.sprites.Sprites.*;
 
-public class GameOverMenu extends Menu {
+public class GameOverMenu extends Scene {
     protected Sprite
         game_over,
         menu_button,

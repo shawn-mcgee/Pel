@@ -159,18 +159,22 @@ public class Layout implements Copyable<Layout>, Serializable {
                 "x0", "y0", "x1", "y1", "w0",
                 "h0", "w1", "h1", "w2", "h2"
             );
-            l.x0 = t[0] != null && !t[0].isBlank() ? Attribute.Mutable.fromString(t[0]) : null;
-            l.y0 = t[1] != null && !t[1].isBlank() ? Attribute.Mutable.fromString(t[1]) : null;
-            l.x1 = t[2] != null && !t[2].isBlank() ? Attribute.Mutable.fromString(t[2]) : null;
-            l.y1 = t[3] != null && !t[3].isBlank() ? Attribute.Mutable.fromString(t[3]) : null;
-            l.w0 = t[4] != null && !t[4].isBlank() ? Attribute.Mutable.fromString(t[4]) : null;
-            l.h0 = t[5] != null && !t[5].isBlank() ? Attribute.Mutable.fromString(t[5]) : null;
-            l.w1 = t[6] != null && !t[6].isBlank() ? Attribute.Mutable.fromString(t[6]) : null;
-            l.h1 = t[7] != null && !t[7].isBlank() ? Attribute.Mutable.fromString(t[7]) : null;
-            l.w2 = t[8] != null && !t[8].isBlank() ? Attribute.Mutable.fromString(t[8]) : null;
-            l.h2 = t[9] != null && !t[9].isBlank() ? Attribute.Mutable.fromString(t[9]) : null;
+            l.x0 = t[0] != null && !isBlank(t[0]) ? Attribute.Mutable.fromString(t[0]) : null;
+            l.y0 = t[1] != null && !isBlank(t[1]) ? Attribute.Mutable.fromString(t[1]) : null;
+            l.x1 = t[2] != null && !isBlank(t[2]) ? Attribute.Mutable.fromString(t[2]) : null;
+            l.y1 = t[3] != null && !isBlank(t[3]) ? Attribute.Mutable.fromString(t[3]) : null;
+            l.w0 = t[4] != null && !isBlank(t[4]) ? Attribute.Mutable.fromString(t[4]) : null;
+            l.h0 = t[5] != null && !isBlank(t[5]) ? Attribute.Mutable.fromString(t[5]) : null;
+            l.w1 = t[6] != null && !isBlank(t[6]) ? Attribute.Mutable.fromString(t[6]) : null;
+            l.h1 = t[7] != null && !isBlank(t[7]) ? Attribute.Mutable.fromString(t[7]) : null;
+            l.w2 = t[8] != null && !isBlank(t[8]) ? Attribute.Mutable.fromString(t[8]) : null;
+            l.h2 = t[9] != null && !isBlank(t[9]) ? Attribute.Mutable.fromString(t[9]) : null;
         }
         return l;
+    }
+
+    protected static boolean isBlank(String s) {
+        return s.trim().equals("");
     }
     
     public static class Mutable extends Layout {
@@ -399,7 +403,7 @@ public class Layout implements Copyable<Layout>, Serializable {
         }
         
         protected static <A extends Attribute> A fromString(A a, String s) {
-            if(a != null && s != null && (s = s.strip()).length() > 0) {
+            if(a != null && s != null && (s = s.trim()).length() > 0) {
                 String
                     word = "";
                 float

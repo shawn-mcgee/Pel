@@ -17,8 +17,8 @@ public class Resource {
     public Resource(String   resource) {
         String[] u = (resource + " ").split(":");
         String
-            from = u.length > 1 ? u[0].strip() : null,
-            path = u.length > 1 ? u[1].strip() : u[0].strip();
+            from = u.length > 1 ? u[0].trim() : null,
+            path = u.length > 1 ? u[1].trim() : u[0].trim();
         try {
             if(from != null) {
                 this.path = path;
@@ -186,7 +186,8 @@ public class Resource {
     
     public static byte[] readBytes(InputStream from, String resource) {
         try(BufferedInputStream in = new BufferedInputStream(from)) {
-            return in.readAllBytes();
+            throw new UnsupportedOperationException();
+            //return in.readAllBytes();
         } catch (Exception na) {
             Debug.warn(new Object() { }, "Unable to read bytes from resource '" + resource + "'");
         }

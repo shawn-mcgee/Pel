@@ -1,9 +1,6 @@
 package lrj.game.menu;
 
-import lrj.core.Engine;
-import lrj.core.Input;
-import lrj.core.Renderable;
-import lrj.core.Sprite;
+import lrj.core.*;
 import lrj.game.Game;
 import lrj.math.Vector2;
 import lrj.math.Vector3;
@@ -16,17 +13,19 @@ import java.util.Random;
 
 import static java.awt.event.KeyEvent.VK_ESCAPE;
 import static lrj.game.Game.*;
-import static lrj.game.sprites.Sprites.LRJ_PLAY_BUTTON;
-import static lrj.game.sprites.Sprites.LRJ_QUIT_BUTTON;
+import static lrj.game.menu.Menu.*;
+import static lrj.game.sprites.Sprites.*;
 
-public class MainMenu extends Menu {
+public class MainMenu extends Scene {
     protected Sprite
+        logo_sprite,
         play_button,
         quit_button;
     protected float
         warp_parallax;
 
     public MainMenu() {
+        logo_sprite = new Sprite(LRJ_LOGO);
         play_button = new Sprite(LRJ_PLAY_BUTTON);
         quit_button = new Sprite(LRJ_QUIT_BUTTON);
 
@@ -73,6 +72,7 @@ public class MainMenu extends Menu {
         if (isButtonHover(quit_button)) quit_button.frame = ON_HOVER;
         if (isButtonPress(quit_button)) quit_button.frame = ON_PRESS;
 
+        logo_sprite.onRenderImage(context);
         play_button.onRenderImage(context);
         quit_button.onRenderImage(context);
     }

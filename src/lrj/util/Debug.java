@@ -50,7 +50,7 @@ public class Debug {
         String format;
         if (trace instanceof String) {
             format = (String)trace;
-            if(!format.isBlank())
+            if(!format.trim().equals(""))
                 format = String.format("[%1$s]", trace);
         } else {
             try {
@@ -68,7 +68,7 @@ public class Debug {
             s0 = Objects.toString(event),
             s1 = String.format(s0, args);
         format += " %s%n";
-        for(String u: s1.strip().split("\\n"))
+        for(String u: s1.trim().split("\\n"))
             sb.append(String.format(format, u));
         return sb.toString();
     }

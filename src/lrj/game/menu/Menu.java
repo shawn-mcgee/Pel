@@ -15,10 +15,14 @@ import static lrj.game.Game.CANVAS_H;
 import static lrj.game.sprites.Sprites.LRJ_PLAY_BUTTON;
 import static lrj.game.sprites.Sprites.LRJ_QUIT_BUTTON;
 
-public class Menu extends Scene {
+public final class Menu {
     public static final int
         ON_HOVER = 1,
         ON_PRESS = 2;
+
+    private Menu() {
+        // do nothing
+    }
 
     public static boolean isButtonHover(Sprite button) {
         Vector2 mouse = Input.getMouse();

@@ -166,13 +166,13 @@ public interface Configurable {
         if(s != null) {
             String[] t = (s + " ").split("\\n");
             for (String u: t) {
-                if((u = u.strip()).startsWith("//"))
+                if((u = u.trim()).startsWith("//"))
                     continue;
                 int i = u.indexOf(":");
                 if(i >= 0) {
                     String
-                        u0 = u.substring(0, i).strip(),
-                        u1 = u.substring(++ i).strip();
+                        u0 = u.substring(0, i).trim(),
+                        u1 = u.substring(++ i).trim();
                     setProperty(map, u0, u1);
                 }
             }
