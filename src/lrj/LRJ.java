@@ -38,7 +38,7 @@ public class LRJ {
 //            if(event.isDown() && event.isKey(VK_PERIOD))
 //                Engine.capturePNG();
 //        });
-//        Engine.setCurrentScene(new MainMenu());
+        Engine.setCurrentScene(new MainMenu());
 
         Engine.init();
     }

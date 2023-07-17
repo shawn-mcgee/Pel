@@ -843,7 +843,7 @@ public final class Engine implements Runnable {
         for(WAV w: wav)
             w.onRenderAudio(audio_context);
         
-        audio.write(audio_buffer, 0, audio_buffer.length);
+//        audio.write(audio_buffer, 0, audio_buffer.length);
     }
     
     public static Region2 getDeviceRegion(int i, boolean borderless) {
@@ -1192,7 +1192,7 @@ public final class Engine implements Runnable {
     
     public static class WAV implements AutoCloseable, Renderable.Audio {
         protected static final String
-            FORMAT = "wav/WAV_%1$03d.gif";
+            FORMAT = "wav/WAV_%1$03d.wav";
         protected static int
             INDEX = 0;
     
